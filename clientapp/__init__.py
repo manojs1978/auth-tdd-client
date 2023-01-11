@@ -1,18 +1,20 @@
-from flask import Flask, session, redirect, request, url_for, jsonify, render_template
-from authlib.integrations.flask_client import OAuth
-from . import config as cfg
-from logging.config import dictConfig
-import logging
 import base64
-from flask_oidc import registration, discovery
 import json
+import logging
+import os
 import sys
-from httplib2 import RelativeURIError
-from .client_handler import ClientHandler
+from logging.config import dictConfig
 from urllib.parse import urlparse
 
+from authlib.integrations.flask_client import OAuth
+from flask import (Flask, jsonify, redirect, render_template, request, session,
+                   url_for)
+from flask_oidc import discovery, registration
+from httplib2 import RelativeURIError
+
+from . import config as cfg
+from .client_handler import ClientHandler
 from .ressources.errors import MismatchingStateError, OAuthError
-import os
 
 oauth = OAuth()
 
@@ -98,7 +100,7 @@ def create_app():
                     'op',
                    server_metadata_url=cfg.SERVER_META_URL,
                    client_kwargs={
-                       'scope': 'openid profile email profile',
+                       'scope': 'openid profile email',
                        'acr_value': cfg.ACR_VALUES
                    },
                    token_endpoint_auth_method=cfg.SERVER_TOKEN_AUTH_METHOD)
@@ -172,7 +174,8 @@ def create_app():
         if cfg.ACR_VALUES is not None:
             query_args['acr_values'] = cfg.ACR_VALUES
         
-        query_args["providerHost"] = get_provider_host()
+        if cfg.PROVIDER_HOST_STRING is not None:
+             query_args["providerHost"] = get_provider_host()
 
         response = oauth.op.authorize_redirect(**query_args)
 
